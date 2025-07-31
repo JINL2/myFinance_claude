@@ -40,31 +40,11 @@ class StoreService {
 
       final storeId = storeResponse['store_id'];
       
-      try {
-        // Add user to store
-        await _supabase
-            .from('user_stores')
-            .insert({
-              'user_id': userId,
-              'store_id': storeId,
-            });
-
-        return storeId;
-      } catch (innerError) {
-        print('StoreService Error during user_stores creation: $innerError');
-        
-        // Try to clean up
-        try {
-          await _supabase
-              .from('stores')
-              .delete()
-              .eq('store_id', storeId);
-        } catch (deleteError) {
-          print('StoreService Error: Failed to clean up store: $deleteError');
-        }
-        
-        return null;
-      }
+      // Don't insert into user_stores - let the database trigger handle it
+      print('StoreService: Store created successfully with ID: $storeId');
+      print('StoreService: Database trigger will handle user_stores insertion');
+      
+      return storeId;
     } catch (e) {
       print('StoreService Error: Failed to create store: $e');
       return null;

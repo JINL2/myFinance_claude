@@ -39,6 +39,7 @@ class UserWithCompanies {
         uniqueCompanies[companyId] = Company(
           id: companyId,
           companyName: company['company_name'] as String,
+          companyCode: company['company_code'] as String? ?? '',
           role: UserRole(
             roleName: roleData?['role_name'] as String? ?? 'User',
             permissions: (roleData?['permissions'] as List<dynamic>?)?.cast<String>() ?? [],
@@ -47,6 +48,7 @@ class UserWithCompanies {
               ?.map((store) => Store(
                     id: store['store_id'] as String,
                     storeName: store['store_name'] as String,
+                    storeCode: store['store_code'] as String? ?? '',
                     companyId: companyId,
                   ))
               .toList() ?? [],
@@ -79,6 +81,7 @@ class UserWithCompanies {
       'companies': companies.map((company) => {
         'company_id': company.id,
         'company_name': company.companyName,
+        'company_code': company.companyCode,
         'role': {
           'role_name': company.role.roleName,
           'permissions': company.role.permissions,
@@ -86,6 +89,7 @@ class UserWithCompanies {
         'stores': company.stores.map((store) => {
           'store_id': store.id,
           'store_name': store.storeName,
+          'store_code': store.storeCode,
         }).toList(),
       }).toList(),
     };

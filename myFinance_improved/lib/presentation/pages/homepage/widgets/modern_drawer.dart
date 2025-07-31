@@ -29,6 +29,13 @@ class ModernDrawer extends ConsumerStatefulWidget {
 
 class _ModernDrawerState extends ConsumerState<ModernDrawer> {
   final Map<String, bool> _expandedCompanies = {};
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +179,7 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
         // Companies with Stores Hierarchy
         Expanded(
           child: ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               // Existing Companies with their Stores (selected company first)
@@ -267,6 +275,15 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
               // Select company
               await ref.read(appStateProvider.notifier).selectCompany(company.id);
               
+              // Scroll to top when company is selected
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  0.0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                );
+              }
+              
               // Don't close drawer immediately to allow store selection
             },
             borderRadius: BorderRadius.circular(12),
@@ -319,6 +336,14 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
                             ),
                             const SizedBox(width: 8),
                             Text(
+                              '•',
+                              style: TossTextStyles.caption.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
                               company.role.roleName,
                               style: TossTextStyles.caption.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -350,7 +375,6 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  
                   // Store Items - deduplicate by store ID
                   ...() {
                     print('ModernDrawer: Company ${company.companyName} has ${company.stores.length} stores before deduplication');
@@ -375,6 +399,9 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
                   
                   // Add Store Slot
                   if (isSelected) _buildAddStoreSlot(context, ref, company),
+                  
+                  // View Codes Button (only show if selected)
+                  if (isSelected) _buildViewCodesButton(context, ref, company),
                 ],
               ),
             ),
@@ -480,6 +507,53 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
     );
   }
 
+  Widget _buildViewCodesButton(BuildContext context, WidgetRef ref, Company company) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, left: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showCodesBottomSheet(context, company),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.qr_code_2,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'View codes',
+                  style: TossTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
 
   void _showCompanyActionsBottomSheet(BuildContext context, WidgetRef ref) {
@@ -488,7 +562,6 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.only(
@@ -497,6 +570,7 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
           ),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Handle bar
             Container(
@@ -536,32 +610,30 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
             const SizedBox(height: 32),
             
             // Options
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    // Create Company
-                    _buildOptionCard(
-                      context,
-                      icon: Icons.business,
-                      title: 'Create Company',
-                      subtitle: 'Start a new company and invite others',
-                      onTap: () => _handleCreateCompany(context, ref),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Join Company by Code
-                    _buildOptionCard(
-                      context,
-                      icon: Icons.group_add,
-                      title: 'Join Company',
-                      subtitle: 'Enter company invite code to join',
-                      onTap: () => _handleJoinCompany(context, ref),
-                    ),
-                  ],
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                children: [
+                  // Create Company
+                  _buildOptionCard(
+                    context,
+                    icon: Icons.business,
+                    title: 'Create Company',
+                    subtitle: 'Start a new company and invite others',
+                    onTap: () => _handleCreateCompany(context, ref),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Join Company by Code
+                  _buildOptionCard(
+                    context,
+                    icon: Icons.group_add,
+                    title: 'Join Company',
+                    subtitle: 'Enter company invite code to join',
+                    onTap: () => _handleJoinCompany(context, ref),
+                  ),
+                ],
               ),
             ),
           ],
@@ -576,7 +648,6 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.only(
@@ -585,6 +656,7 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
           ),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Handle bar
             Container(
@@ -635,32 +707,30 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
             const SizedBox(height: 32),
             
             // Options
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    // Create Store
-                    _buildOptionCard(
-                      context,
-                      icon: Icons.store,
-                      title: 'Create Store',
-                      subtitle: 'Add a new store to ${company.companyName}',
-                      onTap: () => _handleCreateStore(context, ref, company),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Join Store by Code
-                    _buildOptionCard(
-                      context,
-                      icon: Icons.add_location,
-                      title: 'Join Store',
-                      subtitle: 'Enter store invite code to join',
-                      onTap: () => _handleJoinStore(context, ref),
-                    ),
-                  ],
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                children: [
+                  // Create Store
+                  _buildOptionCard(
+                    context,
+                    icon: Icons.store,
+                    title: 'Create Store',
+                    subtitle: 'Add a new store to ${company.companyName}',
+                    onTap: () => _handleCreateStore(context, ref, company),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Join Store by Code
+                  _buildOptionCard(
+                    context,
+                    icon: Icons.add_location,
+                    title: 'Join Store',
+                    subtitle: 'Enter store invite code to join',
+                    onTap: () => _handleJoinStore(context, ref),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1593,6 +1663,204 @@ class _ModernDrawerState extends ConsumerState<ModernDrawer> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showCodesBottomSheet(BuildContext context, Company company) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 8, bottom: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Text(
+                    'Company & Store Codes',
+                    style: TossTextStyles.h3.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Codes List
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                children: [
+                  // Company Code
+                  _buildCodeItem(
+                    context: context,
+                    icon: Icons.business,
+                    title: company.companyName,
+                    subtitle: 'Company Code',
+                    code: company.companyCode,
+                    onCopy: () => _copyToClipboard(context, company.companyCode, 'Company code'),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Store Codes
+                  ...company.stores.map((store) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildCodeItem(
+                      context: context,
+                      icon: Icons.store_outlined,
+                      title: store.storeName,
+                      subtitle: 'Store Code',
+                      code: store.storeCode,
+                      onCopy: () => _copyToClipboard(context, store.storeCode, 'Store code'),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCodeItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String code,
+    required VoidCallback onCopy,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onCopy,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TossTextStyles.body.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TossTextStyles.caption.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    code,
+                    style: TossTextStyles.body.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.copy_outlined,
+                          size: 12,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Copy',
+                          style: TossTextStyles.caption.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

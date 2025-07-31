@@ -25,6 +25,7 @@ class SupabaseCompanyRepository implements CompanyRepository {
       return companies.map((company) => Company(
         id: company['id'] as String,
         companyName: company['company_name'] as String,
+        companyCode: company['company_code'] as String? ?? '',
         role: UserRole(
           roleName: company['role_name'] as String,
           permissions: (company['permissions'] as List<dynamic>?)?.cast<String>() ?? [],
@@ -32,6 +33,7 @@ class SupabaseCompanyRepository implements CompanyRepository {
         stores: (company['stores'] as List<dynamic>?)?.map((store) => Store(
           id: store['id'] as String,
           storeName: store['store_name'] as String,
+          storeCode: store['store_code'] as String? ?? '',
           companyId: company['id'] as String,
         )).toList() ?? [],
       )).toList();
