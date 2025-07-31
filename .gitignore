@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Claude AI
+.claude/
+
+# Flutter projects
+myFinance_improved/build/
+myFinance_improved/.dart_tool/
+myFinance_improved/.flutter-plugins
+myFinance_improved/.flutter-plugins-dependencies
+myFinance_improved/.pub-cache/
+myFinance_improved/.pub/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment files
+*.env
+*.env.local
