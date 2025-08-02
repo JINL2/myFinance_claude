@@ -261,6 +261,12 @@ final selectedCompanyProvider = Provider<Company?>((ref) {
   return appStateNotifier.selectedCompany;
 });
 
+// Selected company ID provider
+final selectedCompanyIdProvider = Provider<String?>((ref) {
+  final appState = ref.watch(appStateProvider);
+  return appState.selectedCompanyId;
+});
+
 final selectedStoreProvider = Provider<Store?>((ref) {
   final appState = ref.watch(appStateProvider);
   final appStateNotifier = ref.read(appStateProvider.notifier);

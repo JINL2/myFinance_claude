@@ -15,6 +15,8 @@ import '../../../domain/entities/company.dart';
 import '../../../domain/entities/store.dart';
 import '../../../domain/entities/feature.dart';
 import '../../../data/services/click_tracking_service.dart';
+import '../../app/app_routes.dart';
+import '../../app/route_validator.dart';
 
 class HomePageRedesigned extends ConsumerStatefulWidget {
   const HomePageRedesigned({super.key});
@@ -733,9 +735,13 @@ class _HomePageRedesignedState extends ConsumerState<HomePageRedesigned> with Wi
         print('Warning: No categoryId provided for feature: ${feature.featureName}');
       }
       
-      // Navigate to the feature route
+      // Navigate to the feature route using centralized route system
       if (feature.featureRoute.isNotEmpty) {
-        context.push(feature.featureRoute);
+        // Use route validator for safer navigation
+        ref.navigateToFeature(feature.featureRoute, (validatedRoute) {
+          print('Navigating to validated route: $validatedRoute');
+          context.push(validatedRoute);
+        });
       } else {
         // Show message if no route is defined
         ScaffoldMessenger.of(context).showSnackBar(
